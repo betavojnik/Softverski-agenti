@@ -11,6 +11,18 @@ addCommandAlias("fmt", "all scalafmtSbt scalafmtAll")
 addCommandAlias("fmtCheck", "all scalafmtSbtCheck scalafmtCheckAll")
 addCommandAlias("prepare", "fix; fmt")
 
+fork := true
+
+import ai.kien.python.Python
+
+lazy val python = Python()
+
+lazy val javaOpts = python.scalapyProperties.get.map {
+  case (k, v) => s"""-D$k=$v"""
+}.toSeq
+
+javaOptions ++= javaOpts
+
 lazy val root = (project in file("."))
   .settings(
     name              := "Softverski-agenti",
@@ -23,6 +35,7 @@ lazy val root = (project in file("."))
     ),
     libraryDependencies ++= List(
       "ch.qos.logback"    % "logback-classic"     % "1.5.6",
+      "dev.scalapy"      %% "scalapy-core"        % "0.5.3",
       "org.apache.pekko" %% "pekko-actor-typed"   % "1.0.2",
       "org.apache.pekko" %% "pekko-cluster-typed" % "1.0.2"
     )
