@@ -14,14 +14,11 @@ object TrainerActor {
     Behaviors.setup { _ =>
       val service = new TrainerService()
 
-      val model: Unit = service.train()
+      val model: List[List[Double]] = service.train()
       coordinatorActorRef ! CoordinatorActor.LocalModelFromTrainer(model)
 
       listening(service, coordinatorActorRef)
 
-      // jos sam ti u kodu
-      //...
-      //sad cu da te ucjenjujem
     }
 
   def listening(service: TrainerService, coordinatorActorRef: ActorRef[CoordinatorActor.Data]): Behavior[Data] =

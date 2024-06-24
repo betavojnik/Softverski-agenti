@@ -6,7 +6,7 @@ import me.shadaj.scalapy.py.PyQuote
 import me.shadaj.scalapy.py.PyFunction
 
 class TrainerService {
-  def train(): Unit = {
+  def train(): List[List[Double]] = {
     val pd = py.module("pandas")
     val preprocessing = py.module("sklearn.preprocessing") //sklearn.preprocessing.StandardScaler
     val neural_network = py.module("sklearn.neural_network") //sklearn.neural_network.MLPClassifier
@@ -48,6 +48,9 @@ class TrainerService {
       }
       println()
     }
+
+    val listNetworkWeights: List[List[Double]] = networkWeights.flatten.map(_.toList).toList
+    listNetworkWeights
 
   }
 }
