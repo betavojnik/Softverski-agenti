@@ -1,17 +1,42 @@
 package com.github.betavojnik.actors
 
+import com.github.betavojnik.actors.CoordinatorActor.listening
 import com.github.betavojnik.services.TrainerService
 import org.apache.pekko.actor.typed.{ActorRef, Behavior}
 import org.apache.pekko.actor.typed.scaladsl.Behaviors
 
 object TrainerActor {
-  def apply(coordinatorActorRef: ActorRef[CoordinatorActor.Data]): Behavior[_] = {
-    val service = new TrainerService()
+  sealed trait Data
+  final case class AggregateLocalModels() extends Data
+  private final case class GlobalModel() extends Data
 
-    val model: Unit = service.train()
+  def apply(coordinatorActorRef: ActorRef[CoordinatorActor.Data]): Behavior[Data] =
+    Behaviors.setup { _ =>
+      val service = new TrainerService()
 
-    coordinatorActorRef ! CoordinatorActor.LocalModelFromTrainer(model)
+      val model: Unit = service.train()
+      coordinatorActorRef ! CoordinatorActor.LocalModelFromTrainer(model)
 
-    Behaviors.same
-  }
+      listening(service, coordinatorActorRef)
+
+      // jos sam ti u kodu
+      //...
+      //sad cu da te ucjenjujem
+    }
+
+  def listening(service: TrainerService, coordinatorActorRef: ActorRef[CoordinatorActor.Data]): Behavior[Data] =
+    Behaviors.receive { (ctx, message) =>
+      message match {
+        case AggregateLocalModels() =>
+          ctx.self ! GlobalModel()
+
+          Behaviors.same
+        case GlobalModel() =>
+          val model: Unit = service.train()
+
+          coordinatorActorRef ! CoordinatorActor.LocalModelFromTrainer(model)
+
+          Behaviors.same
+      }
+    }
 }

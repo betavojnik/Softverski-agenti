@@ -12,7 +12,8 @@ object CoordinatorActor {
    * Creates an instance of a coordinator actor for exchanging local models with other coordinators
    */
   def apply(): Behavior[Data] =
-    Behaviors.setup { _ =>
+    Behaviors.setup { ctx =>
+      ctx.spawn(TrainerActor(ctx.self), "Training")
       listening()
     }
 

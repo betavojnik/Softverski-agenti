@@ -1,6 +1,6 @@
 package com.github.betavojnik
 
-import com.github.betavojnik.actors.{CoordinatorActor, TrainerActor}
+import com.github.betavojnik.actors.CoordinatorActor
 import org.apache.pekko.actor.AddressFromURIString
 import org.apache.pekko.actor.typed.{ActorRef, ActorSystem}
 import org.apache.pekko.cluster.typed.{Cluster, Join, JoinSeedNodes}
