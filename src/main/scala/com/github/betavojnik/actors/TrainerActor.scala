@@ -14,7 +14,7 @@ object TrainerActor {
     Behaviors.setup { _ =>
       val service = new TrainerService()
 
-      val model: List[List[Double]] = service.train()
+      val model: (List[List[Double]], List[Double]) = service.train()
       coordinatorActorRef ! CoordinatorActor.LocalModelFromTrainer(model)
 
       listening(service, coordinatorActorRef)
