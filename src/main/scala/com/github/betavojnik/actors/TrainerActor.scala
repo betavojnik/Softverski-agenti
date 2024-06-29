@@ -1,37 +1,38 @@
 package com.github.betavojnik.actors
 
-import com.github.betavojnik.actors.CoordinatorActor.listening
-import com.github.betavojnik.services.TrainerService
-import org.apache.pekko.actor.typed.{ActorRef, Behavior}
+import com.github.betavojnik.models.ModelData
+import com.github.betavojnik.services.{AggregatorService, TrainerService}
 import org.apache.pekko.actor.typed.scaladsl.Behaviors
+import org.apache.pekko.actor.typed.{ActorRef, Behavior}
 
 object TrainerActor {
   sealed trait Data
-  final case class AggregateLocalModels() extends Data
-  private final case class GlobalModel() extends Data
+  final case class AggregateLocalModelData(data: List[ModelData]) extends Data
+  private final case class GlobalModelData(data: ModelData)       extends Data
 
   def apply(coordinatorActorRef: ActorRef[CoordinatorActor.Data]): Behavior[Data] =
-    Behaviors.setup { _ =>
-      val service = new TrainerService()
+    Behaviors.setup { ctx =>
+      val service = new TrainerService(ctx.log)
 
-      val model: (List[List[Double]], List[Double]) = service.train()
-      coordinatorActorRef ! CoordinatorActor.LocalModelFromTrainer(model)
+      val model: ModelData = service.train(None)
+      coordinatorActorRef ! CoordinatorActor.LocalModelDataFromTrainer(model)
 
       listening(service, coordinatorActorRef)
-
     }
 
   def listening(service: TrainerService, coordinatorActorRef: ActorRef[CoordinatorActor.Data]): Behavior[Data] =
     Behaviors.receive { (ctx, message) =>
       message match {
-        case AggregateLocalModels() =>
-          ctx.self ! GlobalModel()
+        case AggregateLocalModelData(data) =>
+          val globalData = AggregatorService.aggregate(data)
+
+          ctx.self ! GlobalModelData(globalData)
 
           Behaviors.same
-        case GlobalModel() =>
-          val model: Unit = service.train()
+        case GlobalModelData(data) =>
+          val model: ModelData = service.train(Some(data))
 
-          coordinatorActorRef ! CoordinatorActor.LocalModelFromTrainer(model)
+          coordinatorActorRef ! CoordinatorActor.LocalModelDataFromTrainer(model)
 
           Behaviors.same
       }
