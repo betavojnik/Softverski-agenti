@@ -1,3 +1,5 @@
 package com.github.betavojnik.models
 
-final case class ModelData(weights: List[List[Double]], biases: List[List[Double]])
+import com.github.betavojnik.Matrix2D
+
+final case class ModelData(weights: List[Matrix2D[Double]], biases: List[List[Double]])

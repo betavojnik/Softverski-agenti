@@ -43,27 +43,18 @@ class TrainerService(logger: Logger) {
 
     val coefs          = py"list(${model.coefs_})"
     val intercepts     = py"list(${model.intercepts_})"
-    val networkWeights = coefs.as[Seq[Seq[Seq[Double]]]]
-    val networkBiases  = intercepts.as[Seq[Seq[Seq[Double]]]]
+    val networkWeights = coefs.as[List[List[List[Double]]]]
+    val networkBiases  = intercepts.as[List[List[Double]]]
 
     networkWeights.zipWithIndex.foreach { case (layerWeights, index) =>
-      logger.debug(s"Layer ${index + 1} weights:\n")
-      layerWeights.foreach { neuronWeights =>
-        logger.debug(neuronWeights.toString)
-      }
+      logger.debug(s"Layer ${index + 1} weights: $layerWeights")
     }
 
     networkBiases.zipWithIndex.foreach { case (layerBiases, index) =>
-      logger.debug(s"Layer ${index + 1} biases: \n")
-      layerBiases.foreach { neuronBiases =>
-        logger.debug(neuronBiases.toString)
-      }
+      logger.debug(s"Layer ${index + 1} biases: $layerBiases")
     }
 
-    val listNetworkWeights: List[List[Double]] = networkWeights.flatten.map(_.toList).toList
-    val listNetworkBiases: List[List[Double]]  = networkBiases.flatten.map(_.toList).toList
-
-    ModelData(listNetworkWeights, listNetworkBiases)
+    ModelData(networkWeights, networkBiases)
   }
 }
 

@@ -1,7 +1,7 @@
 package com.github.betavojnik.actors
 
 import com.github.betavojnik.models.ModelData
-import com.github.betavojnik.services.{AggregatorService, TrainerService}
+import com.github.betavojnik.services.{AverageAggregatorService, TrainerService}
 import org.apache.pekko.actor.typed.scaladsl.Behaviors
 import org.apache.pekko.actor.typed.{ActorRef, Behavior}
 
@@ -24,7 +24,7 @@ object TrainerActor {
     Behaviors.receive { (ctx, message) =>
       message match {
         case AggregateLocalModelData(data) =>
-          val globalData = AggregatorService.aggregate(data)
+          val globalData = AverageAggregatorService.aggregate(data)
 
           ctx.self ! GlobalModelData(globalData)
 
