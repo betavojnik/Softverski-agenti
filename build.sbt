@@ -23,6 +23,10 @@ lazy val javaOpts = python.scalapyProperties.get.map { case (k, v) =>
 
 javaOptions ++= javaOpts
 
+Compile / PB.targets := Seq(
+  scalapb.gen() -> (Compile / sourceManaged).value / "scalapb"
+)
+
 lazy val root = (project in file("."))
   .settings(
     name              := "Softverski-agenti",
