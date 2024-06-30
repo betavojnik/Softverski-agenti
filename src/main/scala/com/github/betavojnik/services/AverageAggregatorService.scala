@@ -16,7 +16,8 @@ object AverageAggregatorService {
       _.zip(_).map { case (acc, mat) =>
         acc.zip(mat).map { case (row1, row2) =>
           row1.zip(row2).map { case (el1, el2) => el1 + el2 / weightsList.size }
-        }}
+        }
+      }
     }
 
   private def averageBiases(biasesList: List[List[List[Double]]]): List[List[Double]] =
