@@ -1,0 +1,16 @@
+syntax = "proto3";
+
+package models;
+
+message List {
+  repeated double values = 1;
+}
+
+message Matrix2D {
+  repeated List rows = 1;
+}
+
+message ModelData {
+  repeated Matrix2D weights = 1;
+  repeated List biases = 2;
+}

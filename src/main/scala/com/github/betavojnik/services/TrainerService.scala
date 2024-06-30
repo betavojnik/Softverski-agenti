@@ -7,15 +7,29 @@ import org.slf4j.Logger
 
 class TrainerService(logger: Logger) {
   private val pd              = py.module("pandas")
+  private val np              = py.module("numpy")
   private val preprocessing   = py.module("sklearn.preprocessing")
   private val neural_network  = py.module("sklearn.neural_network")
   private val metrics         = py.module("sklearn.metrics")
   private val model_selection = py.module("sklearn.model_selection")
 
+  private def MLPClassifierPretrained(coefInit: py.Any, interceptInit: py.Any): py.Dynamic =
+    py.Dynamic.global.`type`(
+      "CallbackHandler",
+      py"(${neural_network.MLPClassifier}, )",
+      Map(
+        "coef_init"      -> coefInit,
+        "intercept_init" -> interceptInit,
+        "_init_coef"     -> py"lambda self, fan_in, fan_out, dtype: [self.coef_init[1] if fan_out == 1 else self.coef_init[0], self.intercept_init[1] if fan_out == 1 else self.intercept_init[0]]"
+      )
+    )
+
   def train(initialData: Option[ModelData]): ModelData = {
     val data = pd.read_csv("mushroom_cleaned.csv")
 
     logger.debug(data.isnull().sum().toString)
+
+    logger.debug(initialData.toString)
 
     val X = data.drop(columns = Seq("class").toPythonProxy)
     val y = data.bracketAccess("class")
@@ -32,8 +46,8 @@ class TrainerService(logger: Logger) {
 
     val model = initialData.fold(
       neural_network.MLPClassifier(hidden_layer_sizes = Seq(100).toPythonProxy, max_iter = 5)
-    ) { _ =>
-      py"MLPClassifierPretrained(coef_init = 1, intercept_init = 1, hidden_layer_sizes = Seq(100).toPythonProxy, max_iter = 5)"
+    ) { data =>
+      py"${MLPClassifierPretrained(data.weights.map(x => np.array(x.toPythonCopy)).toPythonCopy, data.biases.map(x => np.array(x.toPythonCopy)).toPythonCopy)}(hidden_layer_sizes = [100], max_iter = 5)"
     }
     model.fit(X_train_scaled, y_train)
 
@@ -41,10 +55,8 @@ class TrainerService(logger: Logger) {
 
     logger.debug("Classification Report:\n" + metrics.classification_report(y_test, y_pred).toString)
 
-    val coefs          = py"list(${model.coefs_})"
-    val intercepts     = py"list(${model.intercepts_})"
-    val networkWeights = coefs.as[List[List[List[Double]]]]
-    val networkBiases  = intercepts.as[List[List[Double]]]
+    val networkWeights = model.coefs_.as[List[List[List[Double]]]]
+    val networkBiases  = model.intercepts_.as[List[List[Double]]]
 
     networkWeights.zipWithIndex.foreach { case (layerWeights, index) =>
       logger.debug(s"Layer ${index + 1} weights: $layerWeights")
@@ -56,23 +68,4 @@ class TrainerService(logger: Logger) {
 
     ModelData(networkWeights, networkBiases)
   }
-}
-
-object TrainerService {
-  py"""
-    class MLPClassifierPretrained(MLPClassifier):
-      def __init__(self, coef_init, intercept_init, hidden_layer_sizes = None, max_iter = None):
-        super().__init__(hidden_layer_sizes = hidden_layer_sizes, max_iter = max_iter)
-        self.coef_init = coef_init
-        self.intercept_init = intercept_init
-
-      def _init_coef(self, fan_in, fan_out):
-        if self.activation == 'logistic':
-          init_bound = np.sqrt(2. / (fan_in + fan_out))
-        elif self.activation in ('identity', 'tanh', 'relu'):
-          init_bound = np.sqrt(6. / (fan_in + fan_out))
-        else:
-          raise ValueError("Unknown activation function %s" % self.activation)
-
-        return coef_init, intercept_init"""
 }
