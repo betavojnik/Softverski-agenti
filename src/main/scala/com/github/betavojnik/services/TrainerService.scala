@@ -27,10 +27,6 @@ class TrainerService(logger: Logger) {
   def train(initialData: Option[ModelData]): ModelData = {
     val data = pd.read_csv("mushroom_cleaned.csv")
 
-    logger.debug(data.isnull().sum().toString)
-
-    logger.debug(initialData.toString)
-
     val X = data.drop(columns = Seq("class").toPythonProxy)
     val y = data.bracketAccess("class")
 
@@ -57,14 +53,6 @@ class TrainerService(logger: Logger) {
 
     val networkWeights = model.coefs_.as[List[List[List[Double]]]]
     val networkBiases  = model.intercepts_.as[List[List[Double]]]
-
-    networkWeights.zipWithIndex.foreach { case (layerWeights, index) =>
-      logger.debug(s"Layer ${index + 1} weights: $layerWeights")
-    }
-
-    networkBiases.zipWithIndex.foreach { case (layerBiases, index) =>
-      logger.debug(s"Layer ${index + 1} biases: $layerBiases")
-    }
 
     ModelData(networkWeights, networkBiases)
   }
